@@ -7,7 +7,7 @@ const app = express();
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// API route to display branches at /git-admin
+// Serve the Git admin page with buttons
 app.get('/git-admin', async (req, res) => {
     try {
         const branchSummary = await git.branch();
@@ -24,6 +24,30 @@ app.get('/git-admin', async (req, res) => {
         });
         html += '</ul>';
 
+        // Input box and button for committing
+        html += `
+        <div>
+            <h2>Commit Changes</h2>
+            <input type="text" id="commitMessage" placeholder="Enter commit message" />
+            <button onclick="commitChanges()">Commit</button>
+        </div>`;
+
+        // Push and pull buttons
+        html += `
+        <div>
+            <h2>Push and Pull</h2>
+            <button onclick="pushChanges()">Push</button>
+            <button onclick="pullChanges()">Pull</button>
+        </div>`;
+
+        // Button to show the Git log
+        html += `
+        <div>
+            <h2>Commit Log</h2>
+            <button onclick="showCommitLog()">Show Commit Log</button>
+            <pre id="commitLog"></pre>
+        </div>`;
+
         // Add script to handle the button clicks
         html += `
         <script>
@@ -34,30 +58,109 @@ app.get('/git-admin', async (req, res) => {
                     body: JSON.stringify({ branch })
                 });
                 const result = await response.json();
-                console.log(result.message);
+                alert(result.message);
+            }
+
+            async function commitChanges() {
+                const commitMessage = document.getElementById('commitMessage').value;
+                if (commitMessage.trim() === '') {
+                    alert('Commit message cannot be empty');
+                    return;
+                }
+                const response = await fetch('/git-admin/commit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: commitMessage })
+                });
+                const result = await response.json();
+                alert(result.message);
+            }
+
+            async function pushChanges() {
+                const response = await fetch('/git-admin/push', { method: 'POST' });
+                const result = await response.json();
+                alert(result.message);
+            }
+
+            async function pullChanges() {
+                const response = await fetch('/git-admin/pull', { method: 'POST' });
+                const result = await response.json();
+                alert(result.message);
+            }
+
+            async function showCommitLog() {
+                const response = await fetch('/git-admin/log');
+                const log = await response.text();
+                document.getElementById('commitLog').textContent = log;
             }
         </script>`;
 
-        res.send(html); // Send the list of branches as HTML with buttons
+        res.send(html); // Send the HTML response
     } catch (err) {
-        console.error('Error fetching branches:', err);
-        res.status(500).send('Error fetching branches');
+        console.error('Error rendering git admin page:', err);
+        res.status(500).send('Error rendering git admin page');
     }
 });
 
-// API route to checkout a branch
+// API to checkout a branch
 app.post('/git-admin/checkout', async (req, res) => {
     const { branch } = req.body;
-    if (!branch) {
-        return res.status(400).json({ message: 'Branch name is required' });
-    }
-
     try {
         await git.checkout(branch);
         res.json({ message: `Checked out branch: ${branch}` });
     } catch (err) {
         console.error('Error checking out branch:', err);
-        res.status(500).json({ message: `Error checking out branch: ${branch}` });
+        res.status(500).json({ message: 'Error checking out branch' });
+    }
+});
+
+// API to commit changes
+app.post('/git-admin/commit', async (req, res) => {
+    const { message } = req.body;
+    try {
+        await git.add('.');
+        await git.commit(message);
+        res.json({ message: `Committed with message: "${message}"` });
+    } catch (err) {
+        console.error('Error committing changes:', err);
+        res.status(500).json({ message: 'Error committing changes' });
+    }
+});
+
+// API to push changes
+app.post('/git-admin/push', async (req, res) => {
+    try {
+        await git.push();
+        res.json({ message: 'Pushed changes to the remote' });
+    } catch (err) {
+        console.error('Error pushing changes:', err);
+        res.status(500).json({ message: 'Error pushing changes' });
+    }
+});
+
+// API to pull changes
+app.post('/git-admin/pull', async (req, res) => {
+    try {
+        await git.pull();
+        res.json({ message: 'Pulled changes from the remote' });
+    } catch (err) {
+        console.error('Error pulling changes:', err);
+        res.status(500).json({ message: 'Error pulling changes' });
+    }
+});
+
+// API to show the commit log
+app.get('/git-admin/log', async (req, res) => {
+    try {
+        const log = await git.log(['--oneline', '--graph', '--decorate', '--all']);
+        let logOutput = '';
+        log.all.forEach(commit => {
+            logOutput += `${commit.hash} ${commit.message}\n`;
+        });
+        res.send(logOutput);
+    } catch (err) {
+        console.error('Error fetching commit log:', err);
+        res.status(500).send('Error fetching commit log');
     }
 });
 
