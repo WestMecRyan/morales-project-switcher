@@ -34,7 +34,7 @@ app.get('/git-admin', async (req, res) => {
                     body: JSON.stringify({ branch })
                 });
                 const result = await response.json();
-                alert(result.message);
+                console.log(result.message);
             }
         </script>`;
 
