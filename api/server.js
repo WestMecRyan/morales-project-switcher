@@ -10,6 +10,9 @@ app.use(express.json());
 // Serve the Git admin page with buttons
 app.get('/git-admin', async (req, res) => {
     try {
+        // Ensure we fetch the latest remote branches before listing them
+        await git.fetch();
+
         const branchSummary = await git.branch();
         const branches = branchSummary.all; // Array of all branches
         let html = '<h1>Git Branches</h1><ul>';
@@ -32,12 +35,13 @@ app.get('/git-admin', async (req, res) => {
             <button onclick="commitChanges()">Commit</button>
         </div>`;
 
-        // Push and pull buttons
+        // Push, pull, and fetch all buttons
         html += `
         <div>
-            <h2>Push and Pull</h2>
+            <h2>Git Operations</h2>
             <button onclick="pushChanges()">Push</button>
             <button onclick="pullChanges()">Pull</button>
+            <button onclick="fetchAll()">Fetch All</button>
         </div>`;
 
         // Button to show the Git log
@@ -88,6 +92,14 @@ app.get('/git-admin', async (req, res) => {
                 alert(result.message);
             }
 
+            async function fetchAll() {
+                const response = await fetch('/git-admin/fetch', { method: 'POST' });
+                const result = await response.json();
+                alert(result.message);
+                // Optionally reload the page to reflect the updated branch list
+                location.reload();
+            }
+
             async function showCommitLog() {
                 const response = await fetch('/git-admin/log');
                 const log = await response.text();
@@ -102,19 +114,25 @@ app.get('/git-admin', async (req, res) => {
     }
 });
 
-// API to checkout a branch
+// API to checkout a branch (same as before)
 app.post('/git-admin/checkout', async (req, res) => {
     const { branch } = req.body;
     try {
-        await git.checkout(branch);
-        res.json({ message: `Checked out branch: ${branch}` });
+        if (branch.startsWith('remotes/origin/')) {
+            const localBranch = branch.replace('remotes/origin/', '');
+            await git.checkoutBranch(localBranch, branch);
+            res.json({ message: `Checked out and created local branch: ${localBranch} from ${branch}` });
+        } else {
+            await git.checkout(branch);
+            res.json({ message: `Checked out branch: ${branch}` });
+        }
     } catch (err) {
         console.error('Error checking out branch:', err);
         res.status(500).json({ message: 'Error checking out branch' });
     }
 });
 
-// API to commit changes
+// API to commit changes (same as before)
 app.post('/git-admin/commit', async (req, res) => {
     const { message } = req.body;
     try {
@@ -127,7 +145,7 @@ app.post('/git-admin/commit', async (req, res) => {
     }
 });
 
-// API to push changes
+// API to push changes (same as before)
 app.post('/git-admin/push', async (req, res) => {
     try {
         await git.push();
@@ -138,7 +156,7 @@ app.post('/git-admin/push', async (req, res) => {
     }
 });
 
-// API to pull changes
+// API to pull changes (same as before)
 app.post('/git-admin/pull', async (req, res) => {
     try {
         await git.pull();
@@ -149,7 +167,18 @@ app.post('/git-admin/pull', async (req, res) => {
     }
 });
 
-// API to show the commit log
+// API to fetch all changes from all remotes
+app.post('/git-admin/fetch', async (req, res) => {
+    try {
+        await git.fetch('--all');
+        res.json({ message: 'Fetched all updates from all remotes' });
+    } catch (err) {
+        console.error('Error fetching all remotes:', err);
+        res.status(500).json({ message: 'Error fetching all remotes' });
+    }
+});
+
+// API to show the commit log (same as before)
 app.get('/git-admin/log', async (req, res) => {
     try {
         const log = await git.log(['--oneline', '--graph', '--decorate', '--all']);
