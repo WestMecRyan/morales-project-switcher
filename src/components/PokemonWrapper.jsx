@@ -1,3 +1,4 @@
+// src/components/PokemonWrapper
 const PokemonWrapper = () => {
   const pokemonList = [
     { src: "/assets/001.png", alt: "bulbasaur" },

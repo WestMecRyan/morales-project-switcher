@@ -1,8 +1,9 @@
-const Intersection = ({ title, content }) => {
+// src/components/Intersection.jsx
+const Intersection = ({ title, children }) => {
   return (
     <section className="hidden">
       <h2>{title}</h2>
-      <span>{content}</span>
+      <div>{children}</div>
     </section>
   );
 };

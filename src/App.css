@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
 
+/* Root styles */
 body {
   background-color: #131316;
   color: white;
@@ -10,18 +11,15 @@ body {
   margin: 0;
 }
 
-h1 {
-  line-height: 100vh;
-  font-size: 2rem;
-  font-weight: 700;
-  border-bottom: 1px dashed white;
-}
-
-h1,
-h2 {
+/* Root Container */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
   text-align: center;
 }
 
+/* General Section Styles */
 section {
   display: flex;
   flex-direction: column;
@@ -29,12 +27,26 @@ section {
   align-items: center;
   min-height: 100vh;
   border-bottom: 2px solid white;
-
 }
 
 section:first-of-type {
-  border-top: 2px solid white;
+  border-top: 2px solid #fff;
 }
+
+/* Headings */
+h1,
+h2 {
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 100vh;
+  border-bottom: 1px dashed white;
+}
+
+/* Animation Classes */
 .hidden {
   opacity: 0;
   filter: blur(5px);
@@ -48,23 +60,38 @@ section:first-of-type {
   transform: translateX(0);
 }
 
+/* Image Wrapper */
 .img-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 20px;
+  background: linear-gradient(to top right, #e66465, #9198e5);
 }
 
+/* Pokémon Image Styles */
 .pokemon-png {
   width: 20%;
   aspect-ratio: 1/1;
   object-fit: cover;
   border-radius: 10%;
-  /* transition: all 100ms; */
 }
+
+/* Pokémon Hover Animation */
 .pokemon-png:hover {
   animation: GrowRotateAndGlow 1.5s linear infinite;
 }
+
+/* Pokémon Image Transition Delays */
+.pokemon-png:nth-child(2) {
+  transition-delay: 200ms;
+}
+
+.pokemon-png:nth-child(3) {
+  transition-delay: 400ms;
+}
+
+/* Keyframes Animations */
 @keyframes GrowRotateAndGlow {
   0% {
     transform: scale(1) rotate(0deg);
@@ -79,6 +106,7 @@ section:first-of-type {
     box-shadow: 0 0 20px yellow;
   }
 }
+
 @keyframes rockBackandForth {
   0% {
     transform: rotate(0deg);
@@ -102,13 +130,8 @@ section:first-of-type {
     transform: rotate(0deg);
   }
 }
-.pokemon-png:nth-child(2) {
-  transition-delay: 200ms;
-}
 
-.pokemon-png:nth-child(3) {
-  transition-delay: 400ms;
-}
+/* Media Query for Reduced Motion */
 @media (prefers-reduced-motion) {
   .hidden {
     transition: none;
